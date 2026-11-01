@@ -128,8 +128,8 @@ Reaction XP is awarded to the member who adds a reaction. Test with a fresh reac
 - The opening ticket message includes **Close** and **Owner Only** buttons.
 - Owner Only can be enabled by the ticket opener and restricts the channel to the opener + server owner.
 - Closing a ticket no longer deletes it. It is renamed to `closed-...`, the opener is locked from sending, and Keystone posts who closed it.
-- Closed tickets get **Delete** and **Transcript** buttons.
-- Transcript downloads up to 1,000 recent messages into a text file.
+- Closed tickets keep a **Delete** button. A transcript is archived automatically when the ticket is closed.
+- Ticket transcripts archive up to 1,000 recent messages into a text file when the ticket is closed.
 - Deleting a ticket is staff-only and also attempts to archive the transcript to the configured ticket log channel first.
 
 

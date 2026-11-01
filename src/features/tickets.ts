@@ -19,7 +19,6 @@ export const TICKET_OPEN_ID = "feral:ticket:open";
 export const TICKET_CLOSE_ID = "feral:ticket:close";
 export const TICKET_OWNER_ONLY_ID = "feral:ticket:owner-only";
 export const TICKET_DELETE_ID = "feral:ticket:delete";
-export const TICKET_TRANSCRIPT_ID = "feral:ticket:transcript";
 
 function safeName(input: string): string {
   return input.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 28) || "member";
@@ -55,7 +54,6 @@ function openControls(ownerOnly = false) {
 function closedControls() {
   return [new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder().setCustomId(TICKET_DELETE_ID).setLabel("Delete").setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId(TICKET_TRANSCRIPT_ID).setLabel("Transcript").setStyle(ButtonStyle.Secondary),
   )];
 }
 
@@ -201,19 +199,23 @@ export function registerTicketInteractions(client: Client): void {
         { name: "Closed by", value: `${interaction.user.tag} (${interaction.user.id})` },
         { name: "Owner", value: ownerId ? `<@${ownerId}> (${ownerId})` : "Unknown" },
       ).setTimestamp();
-      await sendLog(interaction.guild, "tickets", logEmbed);
-      await interaction.editReply("Ticket closed.");
-      return;
-    }
 
-    if (interaction.customId === TICKET_TRANSCRIPT_ID) {
-      if (interaction.user.id !== ownerId && !staff) {
-        return void await interaction.reply({ content: "You do not have permission to generate this transcript.", ephemeral: true });
-      }
-      await interaction.deferReply({ ephemeral: true });
+      // Archive the transcript once, at close time. The closed ticket then only needs a Delete button.
       const text = await transcript(channel);
-      const file = new AttachmentBuilder(Buffer.from(text || "No transcript content.", "utf8"), { name: `${channel.name}.txt` });
-      await interaction.editReply({ content: "Transcript generated.", files: [file] });
+      const logId = settings.logs.tickets;
+      if (logId) {
+        const logChannel = await interaction.guild.channels.fetch(logId).catch(() => null);
+        if (logChannel?.isSendable()) {
+          const file = new AttachmentBuilder(Buffer.from(text || "No transcript content.", "utf8"), { name: `${channel.name}.txt` });
+          await logChannel.send({ embeds: [logEmbed], files: [file] }).catch(() => undefined);
+        } else {
+          await sendLog(interaction.guild, "tickets", logEmbed);
+        }
+      } else {
+        await sendLog(interaction.guild, "tickets", logEmbed);
+      }
+
+      await interaction.editReply("Ticket closed.");
       return;
     }
 
@@ -222,18 +224,12 @@ export function registerTicketInteractions(client: Client): void {
         return void await interaction.reply({ content: "Only ticket staff can delete a ticket.", ephemeral: true });
       }
       await interaction.reply({ content: "Deleting ticket…", ephemeral: true });
-      const text = await transcript(channel);
-      const logId = settings.logs.tickets;
-      if (logId) {
-        const logChannel = await interaction.guild.channels.fetch(logId).catch(() => null);
-        if (logChannel?.isSendable()) {
-          const file = new AttachmentBuilder(Buffer.from(text || "No transcript content.", "utf8"), { name: `${channel.name}.txt` });
-          await logChannel.send({
-            embeds: [new EmbedBuilder().setColor(0xc45c5c).setTitle("Ticket deleted").setDescription(`${interaction.user} deleted ${channel.name}.`).setTimestamp()],
-            files: [file],
-          }).catch(() => undefined);
-        }
-      }
+      const deleteEmbed = new EmbedBuilder()
+        .setColor(0xc45c5c)
+        .setTitle("Ticket deleted")
+        .setDescription(`${interaction.user} deleted ${channel.name}.`)
+        .setTimestamp();
+      await sendLog(interaction.guild, "tickets", deleteEmbed);
       setTimeout(() => void channel.delete(`Ticket deleted by ${interaction.user.tag}`).catch(() => undefined), 1200);
     }
   });
