@@ -156,3 +156,12 @@ Example: map a Bloxlink/verification role to FERAL's `Verified` role so Keystone
 - `reset` clears the stopwatch and laps.
 - Stopwatch state is stored in `stopwatches.json`, so a running stopwatch continues to measure elapsed real time across Keystone restarts.
 - Command replies are ephemeral to avoid cluttering public channels.
+
+## v0.3.2
+Staff leveling controls added:
+- `/add-level user amount`
+- `/remove-level user amount`
+- `/add-xp user amount`
+- `/remove-xp user amount`
+
+These commands recalculate the member's level, synchronize configured tier roles, and log the adjustment to the moderation log. Level adjustments preserve the member's existing progress within their current level where possible.

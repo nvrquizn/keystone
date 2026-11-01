@@ -17,6 +17,7 @@ import { automodCommand } from "./automod.js";
 import { leaderboardCommand } from "./leaderboard.js";
 import { selfRolesCommand } from "./selfroles.js";
 import { stopwatchCommand } from "./stopwatch.js";
+import { addLevelCommand, removeLevelCommand, addXpCommand, removeXpCommand } from "./leveladmin.js";
 
 export const commands: BotCommand[] = [
   pingCommand,
@@ -40,6 +41,10 @@ export const commands: BotCommand[] = [
   leaderboardCommand,
   selfRolesCommand,
   stopwatchCommand,
+  addLevelCommand,
+  removeLevelCommand,
+  addXpCommand,
+  removeXpCommand,
 ];
 
 export const commandMap = new Map(commands.map(command => [command.data.name, command]));

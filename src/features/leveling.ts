@@ -133,6 +133,65 @@ async function applyXp(guild: Guild, userId: string, amount: number): Promise<{ 
   return { oldLevel, newLevel };
 }
 
+
+export async function syncMemberTierRoles(guild: Guild, userId: string, level: number): Promise<LevelTier | undefined> {
+  const settings = await getGuildSettings(guild.id);
+  const member = await guild.members.fetch(userId).catch(() => null);
+  if (!member) return undefined;
+
+  const configuredRoleIds = new Set(settings.leveling.tiers.map(t => t.roleId));
+  const earnedRoleIds = new Set(settings.leveling.tiers.filter(t => level >= t.level).map(t => t.roleId));
+
+  for (const roleId of configuredRoleIds) {
+    const hasRole = member.roles.cache.has(roleId);
+    const shouldHave = earnedRoleIds.has(roleId);
+    if (shouldHave && !hasRole) await member.roles.add(roleId).catch(() => undefined);
+    if (!shouldHave && hasRole) await member.roles.remove(roleId).catch(() => undefined);
+  }
+
+  return [...settings.leveling.tiers]
+    .sort((a, b) => a.level - b.level)
+    .filter(t => level >= t.level)
+    .at(-1);
+}
+
+export async function adjustXpBy(guild: Guild, userId: string, delta: number): Promise<{ before: { xp: number; level: number }; after: { xp: number; level: number } }> {
+  let before = { xp: 0, level: 0 };
+  let after = { xp: 0, level: 0 };
+  await updateJson<LevelsFile>("levels", DEFAULT_LEVELS, data => {
+    data.guilds[guild.id] ??= {};
+    const record = data.guilds[guild.id]![userId] ??= { xp: 0, level: 0 };
+    before = { xp: record.xp, level: record.level };
+    record.xp = Math.max(0, Math.floor(record.xp + delta));
+    record.level = levelForXp(record.xp);
+    after = { xp: record.xp, level: record.level };
+  });
+  return { before, after };
+}
+
+export async function adjustLevelBy(guild: Guild, userId: string, deltaLevels: number): Promise<{ before: { xp: number; level: number }; after: { xp: number; level: number } }> {
+  let before = { xp: 0, level: 0 };
+  let after = { xp: 0, level: 0 };
+  await updateJson<LevelsFile>("levels", DEFAULT_LEVELS, data => {
+    data.guilds[guild.id] ??= {};
+    const record = data.guilds[guild.id]![userId] ??= { xp: 0, level: 0 };
+    before = { xp: record.xp, level: record.level };
+
+    const currentLevel = levelForXp(record.xp);
+    const currentFloor = totalXpForLevel(currentLevel);
+    const progress = Math.max(0, record.xp - currentFloor);
+    const targetLevel = Math.max(0, currentLevel + Math.trunc(deltaLevels));
+    const targetFloor = totalXpForLevel(targetLevel);
+    const maxProgressAtTarget = Math.max(0, xpForNextLevel(targetLevel) - 1);
+    const preservedProgress = Math.min(progress, maxProgressAtTarget);
+
+    record.xp = targetFloor + preservedProgress;
+    record.level = levelForXp(record.xp);
+    after = { xp: record.xp, level: record.level };
+  });
+  return { before, after };
+}
+
 async function handleLevelUp(guild: Guild, userId: string, oldLevel: number, newLevel: number): Promise<void> {
   if (newLevel <= oldLevel) return;
 
