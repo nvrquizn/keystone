@@ -20,7 +20,9 @@ import {
   joinVoiceChannel,
   type VoiceConnection,
 } from "@discordjs/voice";
-import OpusScript = require("opusscript");
+import { createRequire } from "node:module";
+
+const OpusScript = createRequire(import.meta.url)("opusscript");
 import {
   VC_RETENTION_MS,
   cleanupExpiredVoiceSessions,
