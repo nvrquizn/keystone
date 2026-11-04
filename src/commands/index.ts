@@ -30,6 +30,7 @@ import { automodCommand } from "./automod.js";
 import { leaderboardCommand } from "./leaderboard.js";
 import { selfRolesCommand } from "./selfroles.js";
 import { stopwatchCommand } from "./stopwatch.js";
+import { vcTranscriptCommand } from "./vctranscript.js";
 
 import {
   addLevelCommand,
@@ -72,6 +73,7 @@ export const commands: BotCommand[] = [
   removeLevelCommand,
   addXpCommand,
   removeXpCommand,
+  vcTranscriptCommand,
 ];
 
 export const commandMap = new Map(
