@@ -17,24 +17,18 @@ import { registerLogEvents } from "./events/logs.js";
 import { registerInviteTracking } from "./events/invites.js";
 import { registerSelfRoleInteractions } from "./features/selfroles.js";
 import { registerRoleMappings } from "./features/role-mapping.js";
-import { registerVoiceTranscripts } from "./voice-transcripts/runtime.js";
-
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildModeration,
-    GatewayIntentBits.GuildVoiceStates,
-    GatewayIntentBits.GuildMessages,
+GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMessageReactions,
     GatewayIntentBits.GuildInvites,
     GatewayIntentBits.MessageContent,
   ],
   partials: [Partials.Channel, Partials.Message, Partials.Reaction, Partials.User],
 });
-
-registerVoiceTranscripts(client);
-
 registerStickyEvents(client);
 registerLeveling(client);
 registerTicketInteractions(client);

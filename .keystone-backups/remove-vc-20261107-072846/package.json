@@ -1,0 +1,27 @@
+{
+  "name": "feral-bot",
+  "version": "0.3.3",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "commands:deploy": "tsx src/deploy-commands.ts",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@discordjs/voice": "^0.19.2",
+    "discord.js": "^14.18.0",
+    "dotenv": "^16.4.7",
+    "opusscript": "^0.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
