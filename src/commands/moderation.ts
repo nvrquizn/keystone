@@ -108,7 +108,6 @@ export const warnCommand: BotCommand = {
 
     await interaction.reply({
       content: `Warning recorded for ${user.tag}. Record ID: **${note.id}**.${dmResultSuffix(delivered)}`,
-      ephemeral: true,
     });
   },
 };
@@ -169,7 +168,6 @@ export const unwarnCommand: BotCommand = {
 
     await interaction.reply({
       content: `Warning **${recordId}** was marked as revoked for ${user.tag}.${dmResultSuffix(delivered)}`,
-      ephemeral: true,
     });
   },
 };
@@ -239,7 +237,6 @@ export const timeoutCommand: BotCommand = {
 
     await interaction.reply({
       content: `${user.tag} was timed out.${dmResultSuffix(delivered)}`,
-      ephemeral: true,
     });
   },
 };
@@ -297,7 +294,6 @@ export const kickCommand: BotCommand = {
 
     await interaction.reply({
       content: `${user.tag} was kicked.${dmResultSuffix(delivered)}`,
-      ephemeral: true,
     });
   },
 };
@@ -307,7 +303,7 @@ export const banCommand: BotCommand = {
     .setName("ban")
     .setDescription("Ban a member.")
     .setDMPermission(false)
-    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
+    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
     .addUserOption(o =>
       o.setName("user").setDescription("Member").setRequired(true),
     )
@@ -385,7 +381,6 @@ export const banCommand: BotCommand = {
 
     await interaction.reply({
       content: `${user.tag} was banned.${dmResultSuffix(delivered)}`,
-      ephemeral: true,
     });
   },
 };
@@ -453,7 +448,6 @@ export const unbanCommand: BotCommand = {
 
     await interaction.reply({
       content: `${ban.user.tag} was unbanned.${dmResultSuffix(delivered)}`,
-      ephemeral: true,
     });
   },
 };
@@ -558,7 +552,6 @@ export const softbanCommand: BotCommand = {
 
     await interaction.reply({
       content: `${user.tag} was softbanned and immediately unbanned.${dmResultSuffix(delivered)}`,
-      ephemeral: true,
     });
   },
 };
@@ -601,12 +594,16 @@ export const dmCommand: BotCommand = {
         .setTimestamp(),
     );
 
-    await interaction.reply({
-      content: delivered
-        ? `Message sent to ${user.tag}.`
-        : `I could not DM ${user.tag}. They may have DMs disabled.`,
-      ephemeral: true,
-    });
+    if (delivered) {
+      await interaction.reply({
+        content: `Message sent to ${user.tag}.`,
+      });
+    } else {
+      await interaction.reply({
+        content: `I could not DM ${user.tag}. They may have DMs disabled.`,
+        ephemeral: true,
+      });
+    }
   },
 };
 
@@ -643,7 +640,7 @@ export const purgeCommand: BotCommand = {
     const user = interaction.options.getUser("user");
     const reason = interaction.options.getString("reason") ?? "No reason provided.";
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply();
 
     const fetched = await channel.messages.fetch({ limit: 100 });
     const selected = fetched
