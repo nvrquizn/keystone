@@ -336,7 +336,6 @@ export const warningsCommand:
       await interaction.reply({
         content:
           "Keystone could not read modnotes.json.",
-        ephemeral: true,
       });
 
       return;
@@ -368,7 +367,6 @@ export const warningsCommand:
       await interaction.reply({
         content:
           `${user.tag} has no recorded warnings.`,
-        ephemeral: true,
       });
 
       return;
@@ -572,7 +570,6 @@ export const warningsCommand:
             1950,
           ),
 
-        ephemeral: true,
       });
     }
   },
