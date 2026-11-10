@@ -22,6 +22,8 @@ import {
   purgeCommand,
 } from "./moderation.js";
 
+import { warningsCommand } from "./warnings.js";
+import { ticketAddCommand } from "./ticketadd.js";
 import { notesCommand } from "./notes.js";
 import { levelCommand } from "./level.js";
 import { setupCommand } from "./setup.js";
@@ -58,6 +60,8 @@ export const commands: BotCommand[] = [
   dmCommand,
   purgeCommand,
 
+  warningsCommand,
+  ticketAddCommand,
   notesCommand,
   levelCommand,
   setupCommand,
