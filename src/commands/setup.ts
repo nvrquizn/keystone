@@ -66,12 +66,31 @@ export const setupCommand: BotCommand = {
       const level = interaction.options.getInteger("level", true);
       const role = interaction.options.getRole("role", true);
       const name = interaction.options.getString("name", true);
+      const unlocks = interaction.options.getString("unlocks");
+
       await updateGuildSettings(interaction.guild.id, s => {
-        s.leveling.tiers = s.leveling.tiers.filter(t => t.level !== level && t.roleId !== role.id);
-        s.leveling.tiers.push({ level, roleId: role.id, name });
-        s.leveling.tiers.sort((a,b) => a.level-b.level);
+        const existing = s.leveling.tiers.find(
+          t => t.level === level || t.roleId === role.id
+        );
+
+        s.leveling.tiers = s.leveling.tiers.filter(
+          t => t.level !== level && t.roleId !== role.id
+        );
+
+        s.leveling.tiers.push({
+          level,
+          roleId: role.id,
+          name,
+          unlocks: unlocks ?? existing?.unlocks,
+        });
+
+        s.leveling.tiers.sort((a, b) => a.level - b.level);
       });
-      await interaction.reply({ content: `Configured **${name}** at level ${level}.`, ephemeral: true });
+
+      await interaction.reply({
+        content: `Configured **${name}** at level ${level}.`,
+        ephemeral: true,
+      });
       return;
     }
     if (sub === "media") {
