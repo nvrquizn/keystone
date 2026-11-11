@@ -32,6 +32,7 @@ import { automodCommand } from "./automod.js";
 import { leaderboardCommand } from "./leaderboard.js";
 import { selfRolesCommand } from "./selfroles.js";
 import { stopwatchCommand } from "./stopwatch.js";
+import { tiersCommand } from "./tiers.js";
 import {
   addLevelCommand,
   removeLevelCommand,
@@ -64,6 +65,7 @@ export const commands: BotCommand[] = [
   ticketAddCommand,
   notesCommand,
   levelCommand,
+  tiersCommand,
   setupCommand,
   ticketCommand,
   automodCommand,

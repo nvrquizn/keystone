@@ -4,6 +4,7 @@ export interface LevelTier {
   level: number;
   roleId: string;
   name: string;
+  unlocks?: string;
 }
 
 export interface RoleMapping {
