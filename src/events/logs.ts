@@ -1,4 +1,5 @@
 import {
+  AttachmentBuilder,
   EmbedBuilder,
   Events,
   type Client,
@@ -12,6 +13,7 @@ import {
   type User,
 } from "discord.js";
 import { sendLog } from "../lib/logging.js";
+import { getGuildSettings } from "../storage/settings.js";
 
 const NEUTRAL = 0x8297ab;
 const GREEN = 0x6ff098;
@@ -123,25 +125,147 @@ function permissionOverwriteChanges(oldChannel: any, newChannel: any): string[] 
 
 async function logMessageDelete(message: Message | PartialMessage): Promise<void> {
   if (!message.guild) return;
+
   const author = (message as any).author as User | undefined;
   if (author?.bot) return;
 
   const mentions = mentionSummary(message);
   const attachments = attachmentSummary(message);
+
   const embed = new EmbedBuilder()
     .setColor(mentions.length ? YELLOW : RED)
-    .setTitle(mentions.length ? "Message deleted — possible ghost ping" : "Message deleted")
+    .setTitle(
+      mentions.length
+        ? "Message deleted — possible ghost ping"
+        : "Message deleted",
+    )
     .addFields(
       { name: "Author", value: userLabel(author), inline: true },
       { name: "Channel", value: `<#${message.channelId}>`, inline: true },
       { name: "Message ID", value: message.id, inline: true },
-      { name: "Content", value: clip((message as any).content || "Content unavailable (message was not cached).") },
+      {
+        name: "Content",
+        value: clip(
+          (message as any).content ||
+            "Content unavailable (message was not cached).",
+        ),
+      },
     )
     .setTimestamp();
 
-  if (mentions.length) embed.addFields({ name: "Mentioned", value: clip(mentions.join(" ")) });
-  if (attachments) embed.addFields({ name: "Attachments", value: clip(attachments) });
-  await sendLog(message.guild, "messages", embed);
+  if (mentions.length) {
+    embed.addFields({
+      name: "Mentioned",
+      value: clip(mentions.join(" ")),
+    });
+  }
+
+  if (attachments) {
+    embed.addFields({
+      name: "Attachments",
+      value: clip(attachments),
+    });
+  }
+
+  const messageAttachments = [
+    ...((message as any).attachments?.values?.() ?? []),
+  ] as any[];
+
+  const imageAttachments = messageAttachments.filter((attachment: any) => {
+    const contentType = attachment.contentType ?? "";
+    const name = attachment.name ?? "";
+
+    return (
+      contentType.startsWith("image/") ||
+      /\.(png|jpe?g|gif|webp)$/i.test(name)
+    );
+  });
+
+  if (!imageAttachments.length) {
+    await sendLog(message.guild, "messages", embed);
+    return;
+  }
+
+  const preservedFiles: AttachmentBuilder[] = [];
+  const preservedNames: string[] = [];
+
+  for (const [index, attachment] of imageAttachments.slice(0, 10).entries()) {
+    try {
+      const response = await fetch(attachment.url);
+
+      if (!response.ok) {
+        console.warn(
+          `Could not download deleted image ${attachment.url}: HTTP ${response.status}`,
+        );
+        continue;
+      }
+
+      const buffer = Buffer.from(await response.arrayBuffer());
+
+      const originalName =
+        String(attachment.name ?? `image-${index + 1}.png`)
+          .replace(/[^a-zA-Z0-9._-]/g, "_")
+          .slice(-150);
+
+      const filename =
+        `deleted-${message.id}-${index + 1}-${originalName}`;
+
+      preservedFiles.push(
+        new AttachmentBuilder(buffer, {
+          name: filename,
+          description: `Image preserved from deleted message ${message.id}`,
+        }),
+      );
+
+      preservedNames.push(filename);
+    } catch (error) {
+      console.error(
+        `Failed to preserve deleted image ${attachment.url}:`,
+        error,
+      );
+    }
+  }
+
+  if (!preservedFiles.length) {
+    await sendLog(message.guild, "messages", embed);
+    return;
+  }
+
+  embed.setImage(`attachment://${preservedNames[0]}`);
+
+  const extraImageEmbeds = preservedNames.slice(1).map(filename =>
+    new EmbedBuilder()
+      .setColor(RED)
+      .setImage(`attachment://${filename}`),
+  );
+
+  const settings = await getGuildSettings(message.guild.id);
+  const logChannelId =
+    settings.logs.messages ?? settings.logs.general;
+
+  if (!logChannelId) {
+    await sendLog(message.guild, "messages", embed);
+    return;
+  }
+
+  const logChannel = await message.guild.channels
+    .fetch(logChannelId)
+    .catch(() => null);
+
+  if (!logChannel?.isSendable()) {
+    await sendLog(message.guild, "messages", embed);
+    return;
+  }
+
+  await logChannel
+    .send({
+      embeds: [embed, ...extraImageEmbeds].slice(0, 10),
+      files: preservedFiles,
+    })
+    .catch(async error => {
+      console.error("Failed to send deleted-image log:", error);
+      await sendLog(message.guild!, "messages", embed);
+    });
 }
 
 export function registerLogEvents(client: Client): void {
