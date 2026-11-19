@@ -1,3 +1,4 @@
+import { lockdownCommand, unlockdownCommand } from "./lockdown.js";
 import type { BotCommand } from "../lib/command.js";
 
 import { pingCommand } from "./ping.js";
@@ -77,6 +78,8 @@ export const commands: BotCommand[] = [
   removeLevelCommand,
   addXpCommand,
   removeXpCommand,
+  lockdownCommand,
+  unlockdownCommand,
 ];
 
 export const commandMap = new Map(

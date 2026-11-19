@@ -1,3 +1,4 @@
+import { registerLockdownRecovery } from "./commands/lockdown.js";
 import {
   ActivityType,
   Client,
@@ -73,4 +74,5 @@ client.on(Events.InteractionCreate, async interaction => {
 });
 
 client.on(Events.Error, error => console.error("Discord client error:", error));
-await client.login(config.DISCORD_TOKEN);
+await registerLockdownRecovery(client);
+client.login(config.DISCORD_TOKEN);
