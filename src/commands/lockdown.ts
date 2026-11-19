@@ -56,8 +56,8 @@ export const lockdownCommand:BotCommand={
  .setDescription('Lock channel temporarily, then automatically restore permissions.')
  .setDMPermission(false)
  .setDefaultMemberPermissions(P.ManageChannels)
- .addIntegerOption(o=>o.setName('minutes').setDescription('Duration in minutes (default 10)').setMinValue(1).setMaxValue(120))
- .addStringOption(o=>o.setName('reason').setDescription('Why lock the channel?').setRequired(true)),
+ .addStringOption(o=>o.setName('reason').setDescription('Why lock the channel?').setRequired(true))
+ .addIntegerOption(o=>o.setName('minutes').setDescription('Duration in minutes (default 10)').setMinValue(1).setMaxValue(120)),
  async execute(i){
   if(!i.inCachedGuild())return;
   if(!i.memberPermissions?.has(P.ManageChannels))
