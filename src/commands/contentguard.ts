@@ -234,7 +234,7 @@ export const contentGuardCommand: BotCommand = {
 };
 
 const gifUrl =
-  /https?:\/\/(?:[\w-]+\.)*(?:tenor\.com\/(?:view|search)\/|giphy\.com\/(?:gifs|media|embed)\/)|https?:\/\/[^\s<>]+\.gif(?=[?#\s<>]|$)/i;
+  /https?:\/\/(?:[\w-]+\.)*(?:tenor\.com\/(?:view|search)\/|giphy\.com\/(?:gifs|media|embed)\/|klipy\.com\/gifs\/)|https?:\/\/[^\s<>]+\.gif(?=[?#\s<>]|$)/i;
 
 function containsGif(message: Message): boolean {
   if (gifUrl.test(message.content)) return true;
