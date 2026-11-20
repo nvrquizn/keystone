@@ -1,3 +1,4 @@
+import { registerContentGuard } from "./commands/contentguard.js";
 import { registerLockdownRecovery } from "./commands/lockdown.js";
 import {
   ActivityType,
@@ -75,4 +76,5 @@ client.on(Events.InteractionCreate, async interaction => {
 
 client.on(Events.Error, error => console.error("Discord client error:", error));
 await registerLockdownRecovery(client);
+registerContentGuard(client);
 client.login(config.DISCORD_TOKEN);
