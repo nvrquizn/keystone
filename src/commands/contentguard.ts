@@ -285,6 +285,62 @@ async function removeAndNotify(
   }
 }
 
+
+function containsBigFontHeading(content: string): boolean {
+  let insideCodeBlock = false;
+
+  for (const line of content.split(/\r?\n/u)) {
+    if (/^\s*```/u.test(line)) {
+      insideCodeBlock = !insideCodeBlock;
+      continue;
+    }
+
+    if (insideCodeBlock) continue;
+
+    if (/^#{1,2}(?!#)[ \t]+\S/u.test(line)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+async function notifyBigFont(message: Message<true>): Promise<void> {
+  try {
+    const notice = await message.channel.send({
+      content:
+        `<@${message.author.id}>, please avoid using oversized ` +
+        `text formatting (\`#\` or \`##\`) in this channel. ` +
+        `Your message will be removed in 10 seconds unless ` +
+        `you edit it to use regular text. Thank you!`,
+      allowedMentions: {
+        users: [message.author.id],
+        parse: [],
+      },
+    });
+
+    const timer = setTimeout(async () => {
+      try {
+        const latest = await message.fetch();
+
+        if (!containsBigFontHeading(latest.content)) {
+          await notice.delete().catch(() => undefined);
+          return;
+        }
+
+        await latest.delete();
+      } catch (error) {
+        console.error("[contentguard] Big-font cleanup:", error);
+        await notice.delete().catch(() => undefined);
+      }
+    }, 10_000);
+
+    timer.unref();
+  } catch (error) {
+    console.error("[contentguard] Big-font notice:", error);
+  }
+}
+
 export function registerContentGuard(client: Client): void {
   client.on(Events.MessageCreate, async message => {
     try {
@@ -308,7 +364,8 @@ export function registerContentGuard(client: Client): void {
         cfg.gifs[message.channelId] ??
         cfg.gifs[parent];
 
-      if (wordLimit === undefined && !requiredRole) return;
+      const bigFont = containsBigFontHeading(message.content);
+      if (wordLimit === undefined && !requiredRole && !bigFont) return;
 
       const member = message.member ??
         await message.guild.members.fetch(message.author.id)
@@ -333,16 +390,22 @@ export function registerContentGuard(client: Client): void {
 
       if (requiredRole && containsGif(message)) {
         const role = message.guild.roles.cache.get(requiredRole);
-        if (!role) return;
 
-        if (member.roles.highest.position >= role.position) return;
-
-        await removeAndNotify(
-          message,
-          `your GIF was removed because you don't meet the ` +
-          `required level (**${cleanName(role.name)}**).`
-        );
+        if (role && member.roles.highest.position < role.position) {
+          await removeAndNotify(
+            message,
+            `your GIF was removed because you don't meet the ` +
+            `required level (**${cleanName(role.name)}**).`
+          );
+          return;
+        }
       }
+
+      if (bigFont) {
+        await notifyBigFont(message);
+        return;
+      }
+
     } catch (error) {
       console.error("[contentguard] Message handler error:", error);
     }
