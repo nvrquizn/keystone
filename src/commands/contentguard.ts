@@ -305,7 +305,12 @@ function containsBigFontHeading(content: string): boolean {
   return false;
 }
 
+const pendingBigFont = new Set<string>();
+
 async function notifyBigFont(message: Message<true>): Promise<void> {
+  if (pendingBigFont.has(message.id)) return;
+  pendingBigFont.add(message.id);
+
   try {
     const notice = await message.channel.send({
       content:
@@ -332,11 +337,14 @@ async function notifyBigFont(message: Message<true>): Promise<void> {
       } catch (error) {
         console.error("[contentguard] Big-font cleanup:", error);
         await notice.delete().catch(() => undefined);
+      } finally {
+        pendingBigFont.delete(message.id);
       }
     }, 10_000);
 
     timer.unref();
   } catch (error) {
+    pendingBigFont.delete(message.id);
     console.error("[contentguard] Big-font notice:", error);
   }
 }
@@ -410,4 +418,32 @@ export function registerContentGuard(client: Client): void {
       console.error("[contentguard] Message handler error:", error);
     }
   });
+
+  client.on(Events.MessageUpdate, async (_before, updated) => {
+    try {
+      const message = updated.partial
+        ? await updated.fetch().catch(() => null)
+        : updated;
+
+      if (!message?.inGuild() ||
+          message.author.bot ||
+          message.webhookId) return;
+
+      if (!containsBigFontHeading(message.content)) return;
+
+      const member = message.member ??
+        await message.guild.members.fetch(message.author.id)
+          .catch(() => null);
+
+      if (!member ||
+          member.permissions.has(PermissionFlagsBits.ManageMessages)) {
+        return;
+      }
+
+      await notifyBigFont(message);
+    } catch (error) {
+      console.error("[contentguard] Message edit error:", error);
+    }
+  });
+
 }
