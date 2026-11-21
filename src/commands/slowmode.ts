@@ -55,9 +55,7 @@ export const slowmodeCommand: BotCommand = {
     .setName("slowmode")
     .setDescription("Set or disable channel slowmode.")
     .setDMPermission(false)
-    .setDefaultMemberPermissions(
-      PermissionFlagsBits.ManageChannels
-    )
+    .setDefaultMemberPermissions(null)
     .addStringOption(option =>
       option
         .setName("time")
@@ -75,11 +73,16 @@ export const slowmodeCommand: BotCommand = {
   async execute(interaction) {
     if (!interaction.inCachedGuild()) return;
 
-    if (!interaction.memberPermissions?.has(
-      PermissionFlagsBits.ManageChannels
-    )) {
+    const staffRole = interaction.guild.roles.cache.find(
+      role => role.name.toLowerCase() === "staff"
+    );
+
+    if (
+      !staffRole ||
+      !interaction.member.roles.cache.has(staffRole.id)
+    ) {
       await interaction.reply({
-        content: "You need Manage Channels to use this command.",
+        content: "You need the @Staff role to use this command.",
         flags: MessageFlags.Ephemeral,
       });
       return;
