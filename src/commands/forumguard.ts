@@ -18,12 +18,11 @@ export const forumGuardCommand: BotCommand = {
     .addSubcommand(sub => sub.setName("status").setDescription("Show the current configuration.")),
   async execute(interaction) {
     if (!interaction.inCachedGuild()) return;
-    const member = interaction.member;
     const staffRole = interaction.guild.roles.cache.find(role => role.name.toLowerCase() === "staff");
     const authorized = Boolean(
       interaction.memberPermissions?.has(PermissionFlagsBits.Administrator) ||
       interaction.memberPermissions?.has(PermissionFlagsBits.ModerateMembers) ||
-      (staffRole && "roles" in member && member.roles.cache.has(staffRole.id))
+      (staffRole && interaction.member.roles.cache.has(staffRole.id))
     );
     if (!authorized) {
       await interaction.reply({ content: "Staff access required.", flags: MessageFlags.Ephemeral });
