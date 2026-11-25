@@ -13,7 +13,15 @@ export interface RoleMapping {
   removeWithTrigger: boolean;
 }
 
+export interface ForumGuardSettings {
+  enabled: boolean;
+  forumChannelId?: string;
+  logChannelId?: string;
+  publicDuplicateReminder: boolean;
+}
+
 export interface GuildSettings {
+  forumGuard: ForumGuardSettings;
   logs: Partial<Record<LogKind, string>>;
   tickets: {
     categoryId?: string;
@@ -45,6 +53,7 @@ export interface SettingsFile {
 
 export const DEFAULT_GUILD_SETTINGS: GuildSettings = {
   logs: {},
+  forumGuard: { enabled: false, publicDuplicateReminder: false },
   tickets: { staffRoleIds: [] },
   leveling: {
     enabled: false,
