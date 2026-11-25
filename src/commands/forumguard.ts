@@ -1,12 +1,13 @@
 import { ChannelType, MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import type { BotCommand } from "../lib/command.js";
+
 import { getGuildSettings, updateGuildSettings } from "../storage/settings.js";
 
 export const forumGuardCommand: BotCommand = {
   data: new SlashCommandBuilder()
     .setName("forumguard")
     .setDescription("Configure advisory moderation for a Game Ideas forum.")
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .setDefaultMemberPermissions(null)
     .addSubcommand(sub => sub.setName("enable").setDescription("Watch a forum and send review alerts.")
       .addChannelOption(option => option.setName("forum").setDescription("Game Ideas forum")
         .addChannelTypes(ChannelType.GuildForum).setRequired(true))
@@ -17,8 +18,14 @@ export const forumGuardCommand: BotCommand = {
     .addSubcommand(sub => sub.setName("status").setDescription("Show the current configuration.")),
   async execute(interaction) {
     if (!interaction.inCachedGuild()) return;
-    if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
-      await interaction.reply({ content: "Administrator permission required.", flags: MessageFlags.Ephemeral });
+    const staffRole = interaction.guild.roles.cache.find(role => role.name.toLowerCase() === "staff");
+    const authorized = Boolean(
+      interaction.memberPermissions?.has(PermissionFlagsBits.Administrator) ||
+      interaction.memberPermissions?.has(PermissionFlagsBits.ModerateMembers) ||
+      (staffRole && interaction.member.roles.cache.has(staffRole.id))
+    );
+    if (!authorized) {
+      await interaction.reply({ content: "Staff access required.", flags: MessageFlags.Ephemeral });
       return;
     }
     const sub = interaction.options.getSubcommand();
