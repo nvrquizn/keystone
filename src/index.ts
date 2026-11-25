@@ -7,8 +7,10 @@ import {
   GatewayIntentBits,
   MessageFlags,
   Partials,
+  REST,
+  Routes,
 } from "discord.js";
-import { commandMap } from "./commands/index.js";
+import { commandMap, commands } from "./commands/index.js";
 import { config } from "./config.js";
 import { registerStickyEvents } from "./features/stickies.js";
 import { registerReminderWorker } from "./features/reminders.js";
@@ -46,6 +48,23 @@ registerReminderWorker(client);
 client.once(Events.ClientReady, readyClient => {
   readyClient.user.setActivity("FERAL", { type: ActivityType.Watching });
   console.log(`Keystone online as ${readyClient.user.tag}.`);
+  void (async () => {
+    try {
+      const guild = await readyClient.guilds.fetch(config.GUILD_ID);
+      const existing = await guild.commands.fetch();
+      const expected = commands.map(command => command.data.toJSON());
+      const missing = expected.filter(command => !existing.some(registered => registered.name === command.name));
+      console.log(`[commands] Guild ${guild.id}: ${existing.size} registered; missing: ${missing.map(command => command.name).join(", ") || "none"}.`);
+      // Update the same guild command registry managed by commands:deploy.ts.
+      // This also synchronizes permission metadata after permission changes.
+      const rest = new REST({ version: "10" }).setToken(config.DISCORD_TOKEN);
+      await rest.put(Routes.applicationGuildCommands(config.CLIENT_ID, guild.id), { body: expected });
+      const after = await guild.commands.fetch();
+      console.log(`[commands] Discord confirmed ${after.size} guild commands; forumguard: ${after.some(c => c.name === "forumguard") ? "registered" : "MISSING"}.`);
+    } catch (error) {
+      console.error("[commands] Guild slash-command registration failed:", error);
+    }
+  })();
 });
 
 client.on(Events.InteractionCreate, async interaction => {
