@@ -12,7 +12,7 @@ export const forumGuardCommand: BotCommand = {
         .addChannelTypes(ChannelType.GuildForum).setRequired(true))
       .addChannelOption(option => option.setName("logs").setDescription("Private staff review channel")
         .addChannelTypes(ChannelType.GuildText).setRequired(true))
-      .addBooleanOption(option => option.setName("remind").setDescription("Post a gentle reminder for similar titles (default: no)"))))
+      .addBooleanOption(option => option.setName("remind").setDescription("Post a gentle reminder for similar titles (default: no)")))
     .addSubcommand(sub => sub.setName("disable").setDescription("Stop monitoring the forum."))
     .addSubcommand(sub => sub.setName("status").setDescription("Show the current configuration.")),
   async execute(interaction) {
