@@ -9,13 +9,13 @@ const lastReminderAt = new Map<string, number>();
 async function deleteOffTopicLfg(message: Message<true>): Promise<void> {
   try {
     await message.delete();
-    console.log(\`[lfg] Removed non-recruitment message \${message.id} in \${message.channelId}\`);
+    console.log(`[lfg] Removed non-recruitment message ${message.id} in ${message.channelId}`);
   } catch (error) {
-    console.error(\`[lfg] Unable to delete non-recruitment message \${message.id}:\`, error);
+    console.error(`[lfg] Unable to delete non-recruitment message ${message.id}:`, error);
     return;
   }
 
-  const key = \`\${message.guildId}:\${message.author.id}\`;
+  const key = `${message.guildId}:${message.author.id}`;
   const now = Date.now();
   if (now - (lastReminderAt.get(key) ?? 0) < 10 * 60_000) return;
   lastReminderAt.set(key, now);
@@ -25,11 +25,11 @@ async function deleteOffTopicLfg(message: Message<true>): Promise<void> {
     }
   }
   await message.author.send({
-    content: "Your message in <#" + message.channelId + "> was removed because that channel is for **Looking for Group posts only**. Please use the game discussion channel for general chat or questions.\\n\\n" +
-      "**Example LFG post:**\\nAnimal: Snow Leopard\\nPlaystyle: Casual\\nPlayers Needed: 2\\nServer: Public\\n\\n" +
+    content: "Your message in <#" + message.channelId + "> was removed because that channel is for **Looking for Group posts only**. Please use the game discussion channel for general chat or questions.\n\n" +
+      "**Example LFG post:**\nAnimal: Snow Leopard\nPlaystyle: Casual\nPlayers Needed: 2\nServer: Public\n\n" +
       "You can also post a clear group invitation, such as ‘Anyone wanna play snow leopard?’ Members can chat inside the discussion thread created for a valid LFG post. This is an automatic channel reminder, not a warning.",
     allowedMentions: { parse: [] },
-  }).catch(error => console.warn(\`[lfg] Could not DM member \${message.author.id} about removed post:\`, error));
+  }).catch(error => console.warn(`[lfg] Could not DM member ${message.author.id} about removed post:`, error));
 }
 
 export function registerLfgThreads(client: Client): void {
