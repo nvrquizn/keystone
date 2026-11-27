@@ -1,5 +1,6 @@
-import { ChannelType, Events, PermissionFlagsBits, type Client, type Guild, type Message, type ThreadChannel } from "discord.js";
+import { ChannelType, Events, type Client, type Guild, type Message, type ThreadChannel } from "discord.js";
 import { getGuildSettings } from "../storage/settings.js";
+import { config } from "../config.js";
 import { isBumpOnly, possibleDuplicate, RollingCounter } from "./forumguard-core.js";
 
 const posting = new RollingCounter();
@@ -39,6 +40,13 @@ async function report(guild: Guild, logChannelId: string, subject: string, messa
 }
 
 export function registerForumGuard(client: Client): void {
+  client.once(Events.ClientReady, () => {
+    void getGuildSettings(config.GUILD_ID).then(settings => {
+      const guard = settings.forumGuard;
+      console.log(`[forumguard] Startup: enabled=${guard.enabled}, forum=${guard.forumChannelId ?? "unset"}, logs=${guard.logChannelId ?? "unset"}, bumpReminders=${guard.publicBumpReminder}`);
+    }).catch(error => console.error("[forumguard] Startup settings check failed:", error));
+  });
+
   client.on(Events.ThreadCreate, async (thread: ThreadChannel, newlyCreated: boolean) => {
     try {
       if (!newlyCreated) return;
@@ -95,7 +103,6 @@ export function registerForumGuard(client: Client): void {
       const settings = (await getGuildSettings(message.guildId)).forumGuard;
       if (!settings.enabled || !settings.forumChannelId || !settings.logChannelId) return;
       if (message.channel.parentId !== settings.forumChannelId) return;
-      if (message.member?.permissions.has(PermissionFlagsBits.ManageThreads)) return;
       if (!isBumpOnly(message.content)) return;
       const now = Date.now();
       const key = message.guildId + ":" + message.channel.id + ":" + message.author.id;
