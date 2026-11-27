@@ -24,6 +24,7 @@ export interface ForumGuardSettings {
 export interface LfgSettings {
   enabled: boolean;
   channelId?: string;
+  deleteOffTopic: boolean;
 }
 
 export interface GuildSettings {
@@ -61,7 +62,7 @@ export interface SettingsFile {
 export const DEFAULT_GUILD_SETTINGS: GuildSettings = {
   logs: {},
   forumGuard: { enabled: false, publicDuplicateReminder: false, publicBumpReminder: true },
-  lfg: { enabled: false },
+  lfg: { enabled: false, deleteOffTopic: false },
   tickets: { staffRoleIds: [] },
   leveling: {
     enabled: false,
