@@ -10,9 +10,9 @@ function link(guildId: string, channelId: string): string {
   return "https://discord.com/channels/" + guildId + "/" + channelId;
 }
 
-function mayAlert(key: string, now: number): boolean {
+function mayAlert(key: string, now: number, cooldownMs = 60 * 60 * 1000): boolean {
   const last = alertAt.get(key);
-  if (last !== undefined && now - last < 60 * 60 * 1000) return false;
+  if (last !== undefined && now - last < cooldownMs) return false;
   alertAt.set(key, now);
   if (alertAt.size > 3000) {
     for (const [id, timestamp] of alertAt) {
@@ -25,7 +25,10 @@ function mayAlert(key: string, now: number): boolean {
 async function report(guild: Guild, logChannelId: string, subject: string, message: string): Promise<void> {
   try {
     const channel = await guild.channels.fetch(logChannelId);
-    if (!channel?.isSendable()) return;
+    if (!channel?.isSendable()) {
+      console.warn("[forumguard] Cannot send review alert: configured log channel is unavailable or not sendable.");
+      return;
+    }
     await channel.send({
       content: ("**ForumGuard | " + subject + "**\n" + message).slice(0, 1900),
       allowedMentions: { parse: [] },
@@ -54,9 +57,22 @@ export function registerForumGuard(client: Client): void {
       const forum = await thread.guild.channels.fetch(settings.forumChannelId);
       if (!forum || forum.type !== ChannelType.GuildForum) return;
       const active = await forum.threads.fetchActive();
-      const match = possibleDuplicate(thread.name, [...active.threads.values()]
+      const candidates = [...active.threads.values()]
         .filter(existing => existing.id !== thread.id)
-        .map(existing => ({ id: existing.id, name: existing.name })));
+        .map(existing => ({ id: existing.id, name: existing.name }));
+      let match = possibleDuplicate(thread.name, candidates);
+      // Older suggestions may have been automatically archived by Discord.
+      // Check the 50 most recent archived posts if no active title matches.
+      if (!match) {
+        try {
+          const archived = await forum.threads.fetchArchived({ limit: 50 });
+          match = possibleDuplicate(thread.name, [...archived.threads.values()]
+            .filter(existing => existing.id !== thread.id)
+            .map(existing => ({ id: existing.id, name: existing.name })));
+        } catch (error) {
+          console.error("[forumguard] Could not check archived forum threads:", error);
+        }
+      }
       if (!match) return;
       const existingLink = link(thread.guild.id, match.id);
       await report(thread.guild, settings.logChannelId, "Possible duplicate",
@@ -84,6 +100,13 @@ export function registerForumGuard(client: Client): void {
       const now = Date.now();
       const key = message.guildId + ":" + message.channel.id + ":" + message.author.id;
       const count = bumping.add(key, now, 60 * 60 * 1000);
+      if (settings.publicBumpReminder && mayAlert("bump-reminder:" + key, now, 5 * 60 * 1000)) {
+        // One reply per member/thread per five minutes, not a formal warning.
+        await message.reply({
+          content: "Please avoid bump-only replies in Game Ideas. If you have meaningful new information or improvements, add those to the discussion instead. This is just a reminder, not a warning.",
+          allowedMentions: { parse: [], repliedUser: false },
+        }).catch(error => console.error("[forumguard] Bump reminder failed:", error));
+      }
       if (count >= 4 && mayAlert("bump:" + key, now)) {
         await report(message.guild, settings.logChannelId, "Repeated bumping",
           "Member: <@" + message.author.id + ">\n4+ bump-only replies in 1 hour in the same post. Review before acting.\n" + message.url);
