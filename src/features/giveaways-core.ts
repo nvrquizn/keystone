@@ -42,7 +42,7 @@ export function parseGiveawayDuration(value: string): number | null {
   const n = Number(match[1]);
   const unit = match[2]?.toLowerCase();
   const total = n * (unit ? UNIT_MS[unit]! : 0);
-  return total >= 60_000 && total <= 30 * UNIT_MS.d ? total : null;
+  return total >= 60_000 && total <= 30 * UNIT_MS.d! ? total : null;
 }
 
 /** Uniform random selection without replacement; historical winners never re-enter. */
