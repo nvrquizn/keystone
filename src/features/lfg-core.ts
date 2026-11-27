@@ -30,9 +30,12 @@ export function isLfgRecruitment(content: string): boolean {
 
   // Free-form LFG requests are also valid; ordinary questions/discussion aren't.
   const opening = text.replace(/^[\s>•-]+/, "").replace(/\s+/g, " ").trim();
-  if (/^lfg(?:\s*[:\-|]\s*|\s+)(?=.{3,})/i.test(opening) &&
-      !/^lfg(?:\s*[:\-|]\s*|\s+)(?:what|wut|why|how|where|this|the|channel|is|are|mean|means|rules?|help|can|should|isn't|not)\b/i.test(opening)) {
-    return true;
+  if (/^lfg\b/i.test(opening)) {
+    const subject = opening.replace(/^lfg\b/i, "").replace(/^[\s:|•—–-]+/, "").trim();
+    if (subject.length >= 3 && /^[\p{L}\p{N}]/u.test(subject) &&
+        !/^(?:what|wut|why|how|where|this|the|channel|is|are|mean|means|rules?|help|can|should|not)\b/i.test(subject)) {
+      return true;
+    }
   }
-  return /^(?:(?:anyone|anybody)(?:\s+here)?\s+(?:wanna|want(?:s)?\s+to|up\s+for|down\s+to)\s+(?:play|join)\b|who\s+(?:wants?\s+to|is\s+up\s+for)\s+(?:play|join)\b|looking\s+for\s+(?:a\s+)?(?:group|pack|party|players|people|teammates)\b|need\s+(?:\d+|some|more|a\s+few)\s+(?:players|people|teammates|members)\b|(?:hosting|starting)\s+(?:a\s+)?(?:group|pack|party|server)\b|join\s+my\s+(?:group|pack|party|server)\b)/i.test(opening);
+  return /^(?:(?:anyone|anybody)(?:\s+here)?\s+(?:wanna|want(?:s)?\s+to|up\s+for|down\s+to)\s+(?:play|join)\b|who\s+(?:wants?\s+to|is\s+up\s+for)\s+(?:play|join)\b|looking\s+for\s+(?:a\s+)?(?:group|pack|party|players|people|teammates)\b|need\s+(?:\d+|some|more|a\s+few)\s+(?:players|people|teammates|members)\b|(?:hosting|starting)\s+(?:a\s+)?(?:group|pack|party|server)\b|join\s+my\s+(?:group|pack|party|server)\b|can\s+(?:anyone|anybody)\s+(?:play|join)\b)/i.test(opening);
 }
