@@ -66,8 +66,8 @@ export const forumGuardCommand: BotCommand = {
     }
     const settings = (await getGuildSettings(interaction.guildId)).forumGuard;
     if (sub === "diagnose") {
-      const forum = settings.forumChannelId ? await interaction.guild.channels.fetch(settings.forumChannelId) : null;
-      const logs = settings.logChannelId ? await interaction.guild.channels.fetch(settings.logChannelId) : null;
+      const forum = settings.forumChannelId ? await interaction.guild.channels.fetch(settings.forumChannelId).catch(() => null) : null;
+      const logs = settings.logChannelId ? await interaction.guild.channels.fetch(settings.logChannelId).catch(() => null) : null;
       const me = await interaction.guild.members.fetchMe();
       const forumPerms = forum?.type === ChannelType.GuildForum ? forum.permissionsFor(me) : null;
       const logPerms = logs?.type === ChannelType.GuildText ? logs.permissionsFor(me) : null;
