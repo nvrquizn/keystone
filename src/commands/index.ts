@@ -1,6 +1,7 @@
 import { contentGuardCommand } from "./contentguard.js";
 import { slowmodeCommand } from "./slowmode.js";
 import { forumGuardCommand } from "./forumguard.js";
+import { syncTiersCommand } from "./sync-tiers.js";
 import { lockdownCommand, unlockdownCommand } from "./lockdown.js";
 import type { BotCommand } from "../lib/command.js";
 
@@ -86,6 +87,7 @@ export const commands: BotCommand[] = [
   contentGuardCommand,
   slowmodeCommand,
   forumGuardCommand,
+  syncTiersCommand,
 ];
 
 export const commandMap = new Map(

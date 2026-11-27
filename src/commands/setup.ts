@@ -67,6 +67,15 @@ export const setupCommand: BotCommand = {
       const role = interaction.options.getRole("role", true);
       const name = interaction.options.getString("name", true);
       const unlocks = interaction.options.getString("unlocks");
+      const botMember = await interaction.guild.members.fetchMe();
+      if (role.id === interaction.guild.id || role.managed || !role.editable ||
+          !botMember.permissions.has(PermissionFlagsBits.ManageRoles)) {
+        await interaction.reply({
+          content: "Keystone cannot assign this tier role. Give Keystone Manage Roles permission and move its highest role above the tier role.",
+          ephemeral: true,
+        });
+        return;
+      }
 
       await updateGuildSettings(interaction.guild.id, s => {
         const existing = s.leveling.tiers.find(
@@ -88,7 +97,7 @@ export const setupCommand: BotCommand = {
       });
 
       await interaction.reply({
-        content: `Configured **${name}** at level ${level}.`,
+        content: `Configured **${name}** at level ${level}. Existing members are not updated automatically when tier settings change; run `/sync-tiers mode:preview`, then `/sync-tiers mode:apply` to grant any missing earned tier roles. Future XP activity also repairs missing roles.`,
         ephemeral: true,
       });
       return;
