@@ -126,11 +126,11 @@ export const giveawayCommand: BotCommand = {
       }
 
       if (sub === "list") {
-        const records = (await listGiveaways(interaction.guild.id)).slice(0, 15);
+        const records = (await listGiveaways(interaction.guild.id)).slice(0, 10);
         await interaction.editReply(records.length
           ? "**Recent giveaways**\n" +
             records.map(record =>
-              "\`" + record.id + "\` — **" + record.prize + "** — " + record.status +
+              "\`" + record.id + "\` — **" + record.prize.slice(0, 60) + "** — " + record.status +
               " — " + giveawayUrl(record)).join("\n")
           : "No giveaways have been created yet.");
         return;
