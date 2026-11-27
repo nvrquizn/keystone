@@ -6,6 +6,7 @@ import { isBumpOnly, possibleDuplicate, RollingCounter } from "./forumguard-core
 const posting = new RollingCounter();
 const bumping = new RollingCounter();
 const alertAt = new Map<string, number>();
+const recentlyLoggedThreads = new Set<string>();
 
 function link(guildId: string, channelId: string): string {
   return "https://discord.com/channels/" + guildId + "/" + channelId;
@@ -34,6 +35,7 @@ async function report(guild: Guild, logChannelId: string, subject: string, messa
       content: ("**ForumGuard | " + subject + "**\n" + message).slice(0, 1900),
       allowedMentions: { parse: [] },
     });
+    console.log(`[forumguard] Staff log sent: ${subject} to ${logChannelId}`);
   } catch (error) {
     console.error("[forumguard] Failed to send staff review:", error);
   }
@@ -49,13 +51,25 @@ export function registerForumGuard(client: Client): void {
 
   client.on(Events.ThreadCreate, async (thread: ThreadChannel, newlyCreated: boolean) => {
     try {
-      if (!newlyCreated) return;
       const settings = (await getGuildSettings(thread.guild.id)).forumGuard;
       if (!settings.enabled || !settings.forumChannelId || !settings.logChannelId) return;
       if (thread.parentId !== settings.forumChannelId) return;
-      const ownerId = thread.ownerId;
-      if (!ownerId) return;
+      // Discord can report newlyCreated=false when the bot sees a new forum post
+      // through a cache/synchronization path. Ignore old threads instead.
       const now = Date.now();
+      const createdAt = thread.createdTimestamp;
+      if (!newlyCreated && (!createdAt || now - createdAt > 90_000 || createdAt > now + 10_000)) return;
+      if (recentlyLoggedThreads.has(thread.id)) return;
+      recentlyLoggedThreads.add(thread.id);
+      if (recentlyLoggedThreads.size > 5000) recentlyLoggedThreads.clear();
+
+      const ownerId = thread.ownerId;
+      console.log(`[forumguard] New forum post: ${thread.id} title=${thread.name} owner=${ownerId ?? "unknown"}`);
+      await report(thread.guild, settings.logChannelId, "New suggestion",
+        "Title: **" + thread.name.slice(0, 200) + "**\nAuthor: " +
+          (ownerId ? "<@" + ownerId + ">" : "Unknown") +
+          "\nPost: " + link(thread.guild.id, thread.id));
+      if (!ownerId) return;
       const count = posting.add(thread.guild.id + ":" + ownerId, now, 6 * 60 * 60 * 1000);
       if (count >= 4 && mayAlert("posts:" + thread.guild.id + ":" + ownerId, now)) {
         await report(thread.guild, settings.logChannelId, "Frequent suggestions",
@@ -107,6 +121,11 @@ export function registerForumGuard(client: Client): void {
       const now = Date.now();
       const key = message.guildId + ":" + message.channel.id + ":" + message.author.id;
       const count = bumping.add(key, now, 60 * 60 * 1000);
+      if (mayAlert("bump-log:" + key, now, 5 * 60 * 1000)) {
+        await report(message.guild, settings.logChannelId, "Bump-only reply",
+          "Member: <@" + message.author.id + ">\nMessage: " + message.url +
+          "\nDetected: " + message.content.slice(0, 100));
+      }
       if (settings.publicBumpReminder && mayAlert("bump-reminder:" + key, now, 5 * 60 * 1000)) {
         // One reply per member/thread per five minutes, not a formal warning.
         await message.reply({

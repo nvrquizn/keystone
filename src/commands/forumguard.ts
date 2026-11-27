@@ -17,7 +17,8 @@ export const forumGuardCommand: BotCommand = {
       .addBooleanOption(option => option.setName("bump_remind").setDescription("Reply to bump-only messages (default: yes)")))
     .addSubcommand(sub => sub.setName("disable").setDescription("Stop monitoring the forum."))
     .addSubcommand(sub => sub.setName("status").setDescription("Show the current configuration."))
-    .addSubcommand(sub => sub.setName("diagnose").setDescription("Check ForumGuard configuration and channel access.")),
+    .addSubcommand(sub => sub.setName("diagnose").setDescription("Check ForumGuard configuration and channel access."))
+    .addSubcommand(sub => sub.setName("testlogs").setDescription("Send a test message to the configured staff forum log channel.")),
   async execute(interaction) {
     if (!interaction.inCachedGuild()) return;
     const staffRole = interaction.guild.roles.cache.find(role => role.name.toLowerCase() === "staff");
@@ -65,6 +66,36 @@ export const forumGuardCommand: BotCommand = {
       return;
     }
     const settings = (await getGuildSettings(interaction.guildId)).forumGuard;
+    if (sub === "testlogs") {
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+      if (!settings.enabled || !settings.logChannelId) {
+        await interaction.editReply("ForumGuard is disabled or has no log channel configured. Use /forumguard enable first.");
+        return;
+      }
+      try {
+        const channel = await interaction.guild.channels.fetch(settings.logChannelId);
+        if (!channel || channel.type !== ChannelType.GuildText) {
+          await interaction.editReply("The configured staff log channel is unavailable or is not a text channel.");
+          return;
+        }
+        const me = await interaction.guild.members.fetchMe();
+        const perms = channel.permissionsFor(me);
+        if (!perms?.has(PermissionFlagsBits.ViewChannel) || !perms.has(PermissionFlagsBits.SendMessages)) {
+          await interaction.editReply("Keystone is missing View Channel or Send Messages in the configured forum log channel.");
+          return;
+        }
+        await channel.send({
+          content: "**ForumGuard | Test log**\nForumGuard successfully sent a message to this channel.\nTriggered by: <@" +
+            interaction.user.id + ">\nConfigured forum: <#" + (settings.forumChannelId ?? "unknown") + ">",
+          allowedMentions: { parse: [] },
+        });
+        await interaction.editReply("Test successful — Keystone sent a message to <#" + channel.id + ">.");
+      } catch (error) {
+        console.error("[forumguard] Log-channel self-test failed:", error);
+        await interaction.editReply("The test message could not be sent. Check Keystone's View Channel, Send Messages, and channel overrides; the error was recorded in Railway logs.");
+      }
+      return;
+    }
     if (sub === "diagnose") {
       const forum = settings.forumChannelId ? await interaction.guild.channels.fetch(settings.forumChannelId).catch(() => null) : null;
       const logs = settings.logChannelId ? await interaction.guild.channels.fetch(settings.logChannelId).catch(() => null) : null;
