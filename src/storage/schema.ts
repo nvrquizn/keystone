@@ -18,6 +18,7 @@ export interface ForumGuardSettings {
   forumChannelId?: string;
   logChannelId?: string;
   publicDuplicateReminder: boolean;
+  publicBumpReminder: boolean;
 }
 
 export interface GuildSettings {
@@ -53,7 +54,7 @@ export interface SettingsFile {
 
 export const DEFAULT_GUILD_SETTINGS: GuildSettings = {
   logs: {},
-  forumGuard: { enabled: false, publicDuplicateReminder: false },
+  forumGuard: { enabled: false, publicDuplicateReminder: false, publicBumpReminder: true },
   tickets: { staffRoleIds: [] },
   leveling: {
     enabled: false,
