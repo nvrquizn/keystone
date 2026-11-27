@@ -1,6 +1,7 @@
 import { contentGuardCommand } from "./contentguard.js";
 import { slowmodeCommand } from "./slowmode.js";
 import { forumGuardCommand } from "./forumguard.js";
+import { lfgCommand } from "./lfg.js";
 import { syncTiersCommand } from "./sync-tiers.js";
 import { giveawayCommand } from "./giveaway.js";
 import { lockdownCommand, unlockdownCommand } from "./lockdown.js";
@@ -88,6 +89,7 @@ export const commands: BotCommand[] = [
   contentGuardCommand,
   slowmodeCommand,
   forumGuardCommand,
+  lfgCommand,
   syncTiersCommand,
   giveawayCommand,
 ];
