@@ -12,7 +12,7 @@
     "start": "node dist/index.js",
     "commands:deploy": "tsx src/deploy-commands.ts",
     "check": "tsc --noEmit",
-    "test": "npm run build && node --test dist/features/forumguard-core.test.js"
+    "test": "npm run build && node --test dist/features/*.test.js"
   },
   "dependencies": {
     "discord.js": "^14.18.0",
