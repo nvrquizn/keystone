@@ -7,6 +7,7 @@ function normalizeGuildSettings(settings?: Partial<GuildSettings>): GuildSetting
     ...(settings ?? {}),
     logs: { ...(settings?.logs ?? {}) },
     forumGuard: { ...structuredClone(DEFAULT_GUILD_SETTINGS.forumGuard), ...(settings?.forumGuard ?? {}) },
+    lfg: { ...structuredClone(DEFAULT_GUILD_SETTINGS.lfg), ...(settings?.lfg ?? {}) },
     tickets: {
       ...structuredClone(DEFAULT_GUILD_SETTINGS.tickets),
       ...(settings?.tickets ?? {}),
