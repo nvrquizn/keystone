@@ -21,8 +21,17 @@ export function possibleDuplicate(
   title: string,
   candidates: TitleCandidate[],
 ): (TitleCandidate & { score: number }) | null {
-  // Short titles like "Jaguar" and "Snow Leopard" frequently represent different ideas.
-  if (normalizeTitle(title).split(" ").length < 3) return null;
+  const normalized = normalizeTitle(title);
+  if (!normalized) return null;
+  // Identical titles are worth flagging for manual review even when short.
+  // Generic titles carry too little information to flag safely.
+  const generic = new Set(["idea", "suggestion", "new idea", "suggestions", "gameplay", "animal"]);
+  if (!generic.has(normalized)) {
+    const exact = candidates.find(candidate => normalizeTitle(candidate.name) === normalized);
+    if (exact) return { ...exact, score: 1 };
+  }
+  // For non-identical titles, require more distinct words to limit false positives.
+  if (normalized.split(" ").length < 3) return null;
   return candidates
     .filter(c => normalizeTitle(c.name).split(" ").length >= 3)
     .map(c => ({ ...c, score: titleSimilarity(title, c.name) }))
