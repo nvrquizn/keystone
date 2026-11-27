@@ -97,7 +97,7 @@ export const setupCommand: BotCommand = {
       });
 
       await interaction.reply({
-        content: `Configured **${name}** at level ${level}. Existing members are not updated automatically when tier settings change; run `/sync-tiers mode:preview`, then `/sync-tiers mode:apply` to grant any missing earned tier roles. Future XP activity also repairs missing roles.`,
+        content: `Configured **${name}** at level ${level}. Existing members are not updated automatically when tier settings change; run /sync-tiers in preview mode, then apply mode to grant any missing earned tier roles. Future XP activity also repairs missing roles.`,
         ephemeral: true,
       });
       return;
