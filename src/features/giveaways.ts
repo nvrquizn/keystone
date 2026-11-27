@@ -22,6 +22,7 @@ import {
 
 const ENTER_PREFIX = "feral:giveaway:enter:";
 const inProgress = new Set<string>();
+const lastRenderedCounts = new Map<string, number>();
 
 function recordKey(guildId: string, id: string): string {
   return guildId + ":" + id;
@@ -305,6 +306,15 @@ async function giveawayWorker(client: Client): Promise<void> {
       if (due || record.status === "ending" || (record.status === "ended" && !record.announced)) {
         await finishGiveaway(guild, record.id).catch(error =>
           console.error("[giveaways] Worker failed on " + record.id, error));
+      } else if (record.status === "active") {
+        // Refresh the public entry count at most once per worker tick instead
+        // of editing the message on every click (important in a large guild).
+        const key = recordKey(guild.id, record.id);
+        if (lastRenderedCounts.get(key) !== record.entries.length) {
+          await editGiveawayMessage(guild, record).then(() => {
+            lastRenderedCounts.set(key, record.entries.length);
+          }).catch(error => console.error("[giveaways] Entry count refresh failed:", error));
+        }
       }
     }
   }
