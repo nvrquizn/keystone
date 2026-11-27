@@ -31,7 +31,18 @@ export function possibleDuplicate(
 }
 
 export function isBumpOnly(message: string): boolean {
-  return /^(?:b+u+m+p+|up+|boost)[\s.!?]*$/iu.test(message.trim());
+  // Match replies whose purpose is only to bump a thread. Do not match normal
+  // discussions about bumping, e.g. "why can't we bump?" or "bumping isn't allowed".
+  const normalized = message.normalize("NFKC").toLocaleLowerCase("en-US").trim()
+    .replace(/^[\s.!?*~_]+|[\s.!?*~_]+$/g, "");
+  if (!normalized) return false;
+  const tokens = normalized.split(/\s+/);
+  if (tokens.length > 4) return false;
+  const clean = (token: string): string => token.replace(/[.!?*~_]+$/g, "");
+  if (!/^(?:b+u+m+p+(?:ing)?|up+|boost)$/.test(clean(tokens[0]!))) return false;
+  return tokens.slice(1).every(token =>
+    /^(?:b+u+m+p+(?:ing)?|this|post|thread|again|please|pls|it|up+|boost|for|visibility)$/.test(clean(token))
+  );
 }
 
 /** Timestamps only, kept in process memory; reset whenever Keystone restarts. */
