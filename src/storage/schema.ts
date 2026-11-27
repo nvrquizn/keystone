@@ -21,8 +21,14 @@ export interface ForumGuardSettings {
   publicBumpReminder: boolean;
 }
 
+export interface LfgSettings {
+  enabled: boolean;
+  channelId?: string;
+}
+
 export interface GuildSettings {
   forumGuard: ForumGuardSettings;
+  lfg: LfgSettings;
   logs: Partial<Record<LogKind, string>>;
   tickets: {
     categoryId?: string;
@@ -55,6 +61,7 @@ export interface SettingsFile {
 export const DEFAULT_GUILD_SETTINGS: GuildSettings = {
   logs: {},
   forumGuard: { enabled: false, publicDuplicateReminder: false, publicBumpReminder: true },
+  lfg: { enabled: false },
   tickets: { staffRoleIds: [] },
   leveling: {
     enabled: false,
