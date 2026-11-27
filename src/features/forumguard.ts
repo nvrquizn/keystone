@@ -35,6 +35,7 @@ async function report(guild: Guild, logChannelId: string, subject: string, messa
       content: ("**ForumGuard | " + subject + "**\n" + message).slice(0, 1900),
       allowedMentions: { parse: [] },
     });
+    console.log(`[forumguard] Staff log sent: ${subject} to ${logChannelId}`);
   } catch (error) {
     console.error("[forumguard] Failed to send staff review:", error);
   }
