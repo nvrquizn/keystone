@@ -77,7 +77,11 @@ async function syncTier(member: GuildMember, tiers: LevelTier[], level: number):
   const sorted = [...tiers].sort((a, b) => a.level - b.level);
   const earnedTiers = sorted.filter(t => level >= t.level);
   for (const tier of earnedTiers) {
-    if (!member.roles.cache.has(tier.roleId)) await member.roles.add(tier.roleId).catch(() => undefined);
+    if (!member.roles.cache.has(tier.roleId)) {
+      await member.roles.add(tier.roleId, "Earned FERAL leveling tier").catch(error => {
+        console.error(`[leveling] Could not give tier ${tier.roleId} to ${member.id}:`, error);
+      });
+    }
   }
   return earnedTiers.at(-1);
 }
@@ -269,7 +273,14 @@ async function awardMessageXp(message: Message): Promise<void> {
     newLevel = record.level;
   });
 
-  if (awarded > 0 && newLevel > oldLevel) await handleLevelUp(message.guild, message.author.id, oldLevel, newLevel);
+  if (awarded > 0) {
+    if (newLevel > oldLevel) {
+      await handleLevelUp(message.guild, message.author.id, oldLevel, newLevel);
+    } else if (message.member) {
+      // Reconcile newly configured tiers even when XP was earned without a level-up.
+      await syncTier(message.member, settings.leveling.tiers, newLevel);
+    }
+  }
 }
 
 async function awardReactionXp(
